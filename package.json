@@ -1,0 +1,14 @@
+{
+  "name": "predio-ia",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Prédio IA — escritório virtual dos agentes do Claude Code",
+  "scripts": {
+    "test": "node --test servidor/test/",
+    "start": "node servidor/main.js"
+  },
+  "dependencies": {
+    "ws": "8.18.0"
+  }
+}
