@@ -87,6 +87,12 @@ export function iniciarServidor({ monitor, token, porta = 4777, dirWeb, interval
       if (url.pathname.startsWith('/api/')) {
         if (req.headers['x-token'] !== token) return responder(res, 401, { erro: 'Sem permissão.' });
         if (req.method === 'GET' && url.pathname === '/api/estado') return responder(res, 200, JSON.parse(retrato()).estado);
+        if (req.method === 'GET' && url.pathname === '/api/ocultos') {
+          const cfg = monitor.getConfig();
+          return responder(res, 200, cfg.ocultos.filter(id => cfg.andares[id]).map(id => ({
+            id, nome: cfg.apelidos[id] || cfg.andares[id].caminhos.at(-1).split(/[\\/]/).pop(),
+          })));
+        }
         if (req.method === 'POST') {
           for (const [padrao, fazer] of rotasPost) {
             const m = padrao.exec(url.pathname);

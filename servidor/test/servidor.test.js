@@ -101,6 +101,16 @@ test('oculta andar', async () => {
   } finally { await s.fechar(); }
 });
 
+test('lista os andares ocultos com nome', async () => {
+  const { s, api } = await subir();
+  try {
+    await api('/api/andares/a/ocultar', { oculto: true });
+    assert.deepEqual(await (await api('/api/ocultos')).json(), [{ id: 'a', nome: 'velho' }]);
+    await api('/api/andares/a/apelido', { apelido: 'Antigo' });
+    assert.deepEqual(await (await api('/api/ocultos')).json(), [{ id: 'a', nome: 'Antigo' }]);
+  } finally { await s.fechar(); }
+});
+
 test('junta andares', async () => {
   const { s, api, monitor } = await subir();
   try {
