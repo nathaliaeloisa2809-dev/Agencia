@@ -15,8 +15,8 @@ const CACHE_INFO_MS = 30 * 1000;
 const cursorInicial = () => ({ offset: 0, resto: Buffer.alloc(0) });
 
 export class Monitor {
-  constructor({ dirProjetos, caminhoConfig, agora = Date.now, home = homedir(), leitor = { lerNovasLinhas, lerInicio }, opcoesReconciliar = {} }) {
-    Object.assign(this, { dirProjetos, caminhoConfig, agora, home, leitor, opcoesReconciliar });
+  constructor({ dirProjetos, caminhoConfig, agora = Date.now, home = homedir(), leitor = { lerNovasLinhas, lerInicio }, opcoesReconciliar = {}, salvar = salvarConfig }) {
+    Object.assign(this, { dirProjetos, caminhoConfig, agora, home, leitor, opcoesReconciliar, salvar });
     this.cfg = carregarConfig(caminhoConfig);
     this.leituras = new Map(); // arquivo → {cursor, sessao, soInicio}
     this.info = new Map();     // andarId → {em, dados}
@@ -24,9 +24,11 @@ export class Monitor {
 
   getConfig() { return this.cfg; }
 
+  // Salva primeiro; só aceita a mudança na memória se o disco aceitou.
   setConfig(fn) {
-    this.cfg = fn(structuredClone(this.cfg));
-    salvarConfig(this.caminhoConfig, this.cfg);
+    const nova = fn(structuredClone(this.cfg));
+    this.salvar(this.caminhoConfig, nova);
+    this.cfg = nova;
     this.info.clear();
   }
 
@@ -80,8 +82,12 @@ export class Monitor {
     const projetos = listarProjetos(this.dirProjetos, { home: this.home });
     const r = reconciliar(this.cfg, projetos, this.opcoesReconciliar);
     if (JSON.stringify(r.cfg) !== JSON.stringify(this.cfg)) {
-      this.cfg = r.cfg;
-      salvarConfig(this.caminhoConfig, this.cfg);
+      try {
+        this.salvar(this.caminhoConfig, r.cfg);
+        this.cfg = r.cfg;
+      } catch (erro) {
+        console.error('Não consegui salvar dados/predio.json (tento de novo na próxima volta):', erro.message);
+      }
     }
     const sessoesPorPasta = new Map();
     for (const p of projetos) {
@@ -94,6 +100,6 @@ export class Monitor {
       sessoesPorPasta.set(p.pasta, sessoes);
     }
     const infoPorAndar = new Map(r.andares.map(a => [a.id, this.infoDoAndar(a, agora)]));
-    return montarEstado({ cfg: this.cfg, andares: r.andares, sessoesPorPasta, infoPorAndar, agora, sugestoes: r.sugestoes });
+    return montarEstado({ cfg: r.cfg, andares: r.andares, sessoesPorPasta, infoPorAndar, agora, sugestoes: r.sugestoes });
   }
 }

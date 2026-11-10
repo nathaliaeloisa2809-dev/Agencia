@@ -6,7 +6,11 @@ const PARADOS = ['parado', 'encerrada'];
 
 function andarRetrato(andar, numero, { cfg, sessoesPorPasta, infoPorAndar, agora }) {
   const info = infoPorAndar.get(andar.id) || { funcionarios: [], tipo: 'fila', skills: [] };
-  const nomes = new Set(info.funcionarios.map(f => f.nome));
+  const tipo = (cfg.tipos && cfg.tipos[andar.id]) || info.tipo;
+  // Projeto sem .claude/agents ganha um funcionário genérico (biblioteca não tem funcionários).
+  const equipe = info.funcionarios.length || tipo === 'biblioteca' ? info.funcionarios
+    : [{ nome: 'Assistente', descricao: 'Assistente geral do projeto', ferramentas: [] }];
+  const nomes = new Set(equipe.map(f => f.nome));
   const visitantes = [], estagiarios = [];
   const ocupados = new Map(); // nome do funcionário → dados ao vivo
 
@@ -32,15 +36,15 @@ function andarRetrato(andar, numero, { cfg, sessoesPorPasta, infoPorAndar, agora
     }
   }
 
-  const funcionarios = info.funcionarios.map(f => ({
+  const funcionarios = equipe.map(f => ({
     nome: f.nome,
     descricao: f.descricao,
     ...(ocupados.get(f.nome) || { estado: 'parado', acao: 'Sem trabalho agora', desde: 0, mensagens: [], arquivos: [] }),
   }));
 
   return {
-    id: andar.id, numero, nome: andar.nome, cor: andar.cor, pastaExiste: andar.pastaExiste,
-    tipo: (cfg.tipos && cfg.tipos[andar.id]) || info.tipo,
+    id: andar.id, numero, nome: andar.nome, apelido: (cfg.apelidos && cfg.apelidos[andar.id]) || '', cor: andar.cor, pastaExiste: andar.pastaExiste,
+    tipo,
     funcionarios, visitantes, estagiarios, skills: info.skills,
   };
 }

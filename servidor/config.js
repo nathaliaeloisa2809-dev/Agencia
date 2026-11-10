@@ -20,5 +20,11 @@ export function salvarConfig(caminho, cfg) {
   mkdirSync(dirname(caminho), { recursive: true });
   const temporario = caminho + '.tmp';
   writeFileSync(temporario, JSON.stringify(cfg, null, 2));
-  renameSync(temporario, caminho);
+  // OneDrive e antivírus às vezes travam o arquivo por um instante.
+  for (let tentativa = 1; ; tentativa++) {
+    try { return renameSync(temporario, caminho); } catch (erro) {
+      if (tentativa >= 5 || !['EPERM', 'EBUSY', 'EACCES'].includes(erro.code)) throw erro;
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50 * tentativa);
+    }
+  }
 }

@@ -482,10 +482,10 @@ $('bAjustes').onclick = async () => {
   const andares = retrato ? retrato.andares : [];
   abrirModal('AJUSTES', `<p class="vazio">Apelido muda só o nome no prédio; a pasta continua igual. Ocultar não apaga nada.</p>
     <div class="lista">${andares.map(a => `<div class="ajuste"><b>${a.numero}º · ${esc(a.nome)}</b><label><input type="checkbox" data-ocultar="${a.id}"> ocultar</label>
-      <input type="text" data-apelido="${a.id}" maxlength="40" placeholder="Apelido (vazio = nome da pasta)"></div>`).join('')}
+      <input type="text" data-apelido="${a.id}" data-antes="${esc(a.apelido)}" value="${esc(a.apelido)}" maxlength="40" placeholder="Apelido (vazio = nome da pasta)"></div>`).join('')}
     ${ocultos.map(o => `<div class="ajuste"><b>${esc(o.nome)} <small class="vazio">(oculto)</small></b><button data-mostrar="${o.id}">Mostrar</button></div>`).join('')}</div>`,
     [{ texto: 'Fechar', primario: true, acao: async () => {
-      for (const i of $('dialog').querySelectorAll('[data-apelido]')) if (i.value.trim()) await api(`/api/andares/${i.dataset.apelido}/apelido`, { apelido: i.value });
+      for (const i of $('dialog').querySelectorAll('[data-apelido]')) if (i.value.trim() !== i.dataset.antes) await api(`/api/andares/${i.dataset.apelido}/apelido`, { apelido: i.value });
       for (const c of $('dialog').querySelectorAll('[data-ocultar]')) if (c.checked) await api(`/api/andares/${c.dataset.ocultar}/ocultar`, { oculto: true });
       return true;
     } }], dlg => {

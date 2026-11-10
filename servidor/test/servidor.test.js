@@ -141,3 +141,24 @@ test('ws sem token é recusado', async () => {
     assert.equal(resultado, 'erro');
   } finally { await s.fechar(); }
 });
+
+import { connect } from 'node:net';
+function pedidoCru(porta, texto) {
+  return new Promise(ok => {
+    const s = connect(porta, '127.0.0.1', () => s.write(texto));
+    let resposta = '';
+    s.on('data', d => { resposta += d; });
+    s.on('close', () => ok(resposta));
+    s.on('error', () => ok(resposta));
+    setTimeout(() => s.destroy(), 500);
+  });
+}
+
+test('pedido com caminho // não derruba o servidor', async () => {
+  const { s, api } = await subir();
+  try {
+    await pedidoCru(s.porta, 'GET // HTTP/1.1\r\nHost: x\r\nConnection: close\r\n\r\n');
+    await pedidoCru(s.porta, 'GET // HTTP/1.1\r\nHost: x\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n');
+    assert.equal((await api('/api/estado')).status, 200);
+  } finally { await s.fechar(); }
+});

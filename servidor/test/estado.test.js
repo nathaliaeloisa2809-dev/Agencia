@@ -83,3 +83,17 @@ test('sugestões levam os nomes', () => {
   const r = montarEstado({ cfg: CFG, andares: [ANDAR, outro], sessoesPorPasta: new Map(), infoPorAndar: INFO, agora: T0, sugestoes: [{ de: 'a1', para: 'a2' }] });
   assert.deepEqual(r.sugestoes, [{ de: 'a1', para: 'a2', deNome: 'Conteudo May', paraNome: 'Agencia May' }]);
 });
+
+test('projeto sem agentes ganha um assistente', () => {
+  const info = new Map([['a1', { funcionarios: [], tipo: 'fila', skills: [] }]]);
+  const r = montarEstado({ cfg: CFG, andares: [ANDAR], sessoesPorPasta: new Map(), infoPorAndar: info, agora: T0, sugestoes: [] });
+  assert.deepEqual(r.andares[0].funcionarios.map(f => [f.nome, f.estado]), [['Assistente', 'parado']]);
+  const bib = new Map([['a1', { funcionarios: [], tipo: 'biblioteca', skills: [] }]]);
+  assert.deepEqual(montarEstado({ cfg: CFG, andares: [ANDAR], sessoesPorPasta: new Map(), infoPorAndar: bib, agora: T0 }).andares[0].funcionarios, []);
+});
+
+test('retrato traz o apelido atual do andar', () => {
+  const cfg = { ...CFG, apelidos: { a1: 'Agência' } };
+  assert.equal(montarEstado({ cfg, andares: [ANDAR], sessoesPorPasta: new Map(), infoPorAndar: INFO, agora: T0 }).andares[0].apelido, 'Agência');
+  assert.equal(montar(new Map()).andares[0].apelido, '');
+});

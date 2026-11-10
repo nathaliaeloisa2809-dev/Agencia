@@ -73,3 +73,20 @@ test('setConfig renomeia o prédio', () => {
   assert.equal(m.atualizar().predio.nome, 'Torre May');
   assert.equal(JSON.parse(readFileSync(c.caminhoConfig, 'utf8')).nome, 'Torre May');
 });
+
+test('falha ao salvar não perde a mudança: tenta de novo na próxima volta', () => {
+  const c = cenario();
+  let chamadas = 0;
+  const salvar = () => { chamadas++; if (chamadas === 1) throw Object.assign(new Error('travado'), { code: 'EPERM' }); };
+  const m = new Monitor({ dirProjetos: c.dirProjetos, caminhoConfig: c.caminhoConfig, home: 'C:\Nada', salvar });
+  m.atualizar();
+  m.atualizar();
+  assert.equal(chamadas, 2);
+});
+
+test('setConfig que falha ao salvar não muda a memória', () => {
+  const c = cenario();
+  const m = new Monitor({ dirProjetos: c.dirProjetos, caminhoConfig: c.caminhoConfig, home: 'C:\Nada', salvar: () => { throw new Error('travado'); } });
+  assert.throws(() => m.setConfig(cfg => ({ ...cfg, nome: 'Outro' })));
+  assert.equal(m.getConfig().nome, 'Prédio IA');
+});

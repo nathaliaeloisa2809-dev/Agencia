@@ -24,6 +24,11 @@ async function lerCorpo(req) {
   return texto ? JSON.parse(texto) : {};
 }
 
+// Endereços estranhos (ex.: "//") não podem derrubar o servidor.
+function urlDoPedido(req) {
+  try { return new URL(req.url, 'http://127.0.0.1'); } catch { return null; }
+}
+
 export function iniciarServidor({ monitor, token, porta = 4777, dirWeb, intervaloMs = 1500 }) {
   const raizWeb = resolve(dirWeb);
   let ultimoJson = null;
@@ -82,8 +87,9 @@ export function iniciarServidor({ monitor, token, porta = 4777, dirWeb, interval
   ];
 
   const servidor = createServer(async (req, res) => {
-    const url = new URL(req.url, 'http://127.0.0.1');
     try {
+      const url = urlDoPedido(req);
+      if (!url) return responder(res, 400, { erro: 'Pedido inválido.' });
       if (url.pathname.startsWith('/api/')) {
         if (req.headers['x-token'] !== token) return responder(res, 401, { erro: 'Sem permissão.' });
         if (req.method === 'GET' && url.pathname === '/api/estado') return responder(res, 200, JSON.parse(retrato()).estado);
@@ -119,14 +125,19 @@ export function iniciarServidor({ monitor, token, porta = 4777, dirWeb, interval
   });
 
   servidor.on('upgrade', (req, socket, cabeca) => {
-    const url = new URL(req.url, 'http://127.0.0.1');
-    if (url.pathname !== '/ws' || url.searchParams.get('t') !== token) {
-      socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-      return socket.destroy();
+    try {
+      const url = urlDoPedido(req);
+      if (!url || url.pathname !== '/ws' || url.searchParams.get('t') !== token) {
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        return socket.destroy();
+      }
+      wss.handleUpgrade(req, socket, cabeca, ws => {
+        try { ws.send(ultimoJson || retrato()); } catch (erro) { console.error(erro.message); }
+      });
+    } catch (erro) {
+      console.error('Pedido de conexão inválido:', erro.message);
+      socket.destroy();
     }
-    wss.handleUpgrade(req, socket, cabeca, ws => {
-      try { ws.send(ultimoJson || retrato()); } catch (erro) { console.error(erro.message); }
-    });
   });
 
   const relogio = setInterval(enviarParaTodos, intervaloMs);
