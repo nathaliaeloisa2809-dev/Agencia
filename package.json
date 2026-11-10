@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Prédio IA — escritório virtual dos agentes do Claude Code",
   "scripts": {
-    "test": "node --test servidor/test/",
+    "test": "node --test servidor/test/ web/test/",
     "start": "node servidor/main.js"
   },
   "dependencies": {
