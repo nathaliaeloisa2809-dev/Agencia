@@ -53,7 +53,9 @@ predio-ia/
 - Cada pasta ali é um projeto. O caminho real vem do campo `cwd` dentro dos `.jsonl`, porque o nome da pasta só tem uma versão codificada do caminho.
 - Cada projeto real vira um andar. Uma pasta nova faz surgir um andar novo, com a animação de obra.
 - **Ignorados automaticamente:** pastas de rascunho do app (`…-scratch-…`) e a pasta inicial do usuário.
-- **Ocultos pelo dono:** lista em `predio.json`. O **Anti** já começa oculto. Ocultar nunca apaga nada no disco.
+- **Ocultos pelo dono:** lista em `predio.json`. Ocultar nunca apaga nada no disco. O Anti foi removido pelo dono em 2026-11-10: o histórico dele foi para a Lixeira.
+- **Subpastas:** se o caminho de um projeto fica dentro do caminho de outro projeto, ele entra no andar do projeto pai e não ganha andar próprio. Exemplo: `skills\.agents\skills` fica dentro de `skills`.
+- **Projetos cuja pasta não existe mais:** continuam aparecendo enquanto houver histórico, com a etiqueta "pasta não encontrada". Servem de candidatos para "pasta renomeada".
 - **Identidade do andar:** cada andar tem um ID próprio, que não muda quando o nome da pasta muda.
   - A identidade é calculada pelo primeiro commit do git; sem git, pelo conjunto de nomes em `.claude/agents` mais o `CLAUDE.md`.
 - **Pasta renomeada:** se o caminho antigo some e aparece um novo com a mesma identidade, o andar só troca de nome e mantém layout, histórico e entregas.
@@ -70,7 +72,21 @@ predio-ia/
 
 - Cada funcionário tem uma mesa fixa, um crachá com o cargo (o `name`) e uma descrição (a `description`).
 - A aparência é sorteada uma vez e fica salva.
-- O andar cresce automaticamente para caber todos. Com 18 funcionários, são duas áreas de mesas.
+- **Todos os funcionários de um projeto ficam no mesmo andar, sempre.** Um projeto nunca é dividido entre andares. O andar cresce, ganhando mais fileiras de mesas e ficando mais comprido, até caber todo mundo, além das mesas de visitante. Com 18 funcionários, são 5 fileiras de 4 mesas.
+- **Subagentes chamados pelo terminal acendem o funcionário certo.** Quando uma sessão no terminal (por exemplo, rodando `ciclo-semanal`) chama a ferramenta Agent, o prédio procura o nome do funcionário em dois lugares: no `subagent_type`, ou num caminho `.claude/agents/<nome>.md` citado no prompt. Achando, é aquele funcionário que aparece trabalhando, com o estado lido do `.jsonl` do subagente (`<sessão>/subagents/agent-*.jsonl`, ligado à chamada pelo `toolUseId` do `.meta.json`). Se não achar, o subagente aparece como estagiário ao lado de quem o chamou.
+
+### 5.1 O andar evolui com o projeto
+
+O andar é montado a partir do que o projeto tem e se atualiza sozinho quando o projeto muda:
+
+| No projeto | No andar |
+|---|---|
+| Cada agente em `.claude/agents` | Uma mesa com crachá. Agente novo ganha mesa nova, e o andar cresce se for preciso. |
+| Skills do projeto (`.claude/skills`) | Uma estante "Manual de procedimentos", com uma lombada por skill; clicando, abre o `SKILL.md` |
+| `CLAUDE.md` | Um quadro "Regras da casa" na parede; clicando, mostra o texto |
+| Linha de produção (`sistema/pipeline.js`) | Um quadro kanban com as peças em cada status, ao vivo |
+| Pasta de entregas com itens | Uma caixa de saída com o contador do dia |
+| Git | Um quadro de avisos com os últimos 5 commits |
 
 ## 6. Estados ao vivo
 
@@ -180,7 +196,10 @@ O adaptador é escolhido automaticamente quando o projeto tem `sistema/pipeline.
   - Conteudo May: as peças do calendário de hoje chegarem a `aguardando-aprovacao`. Vem da cota que o projeto já tem (5 stories por dia, mais post e reels nos dias marcados).
   - Fila: um número de tarefas por dia, definido pelo dono.
   - Biblioteca: sem meta.
-- **Meta batida:** o andar comemora com uma animação curta, os funcionários vão para o lounge ou embora mais cedo, e o agendador não puxa mais trabalho automático daquele andar no dia.
+- **Encerrar mais cedo só com qualidade.** O andar só é liberado antes das 16h quando a meta do dia foi cumprida **e** o trabalho passou nos padrões do projeto:
+  - Linha de produção: todas as peças do dia chegaram a `aguardando-aprovacao` passando pelo `revisor-qualidade`, `npm run status` está sem erros e nenhuma peça tem `aviso`.
+  - Fila: cada tarefa tem a entrega com `RESUMO.md`, e o dono não pediu ajuste nela.
+- **Meta batida com qualidade:** o andar comemora com uma animação curta, os funcionários vão para o lounge ou embora mais cedo, e o agendador não puxa mais trabalho automático daquele andar no dia. Se o dono pedir ajuste depois, o andar volta ao trabalho.
 - **Barra da meta:** no título do andar e no painel PRÉDIO, por exemplo "Meta: 4/6".
 
 ## 10. Limite de agentes ao mesmo tempo
@@ -245,6 +264,12 @@ Mantém o visual aprovado: pixel art 2D vista de cima, painel PRÉDIO à esquerd
 2. **Produção:** executor, adaptadores de linha de produção e de fila, trabalho na hora, responder, aprovar e pedir ajuste, entregas, ⏹ parar.
 3. **Expediente:** agendador com horário de Brasília, pausas, metas, limite de agentes ao mesmo tempo e pausa forçada.
 4. **Construção:** modo construção e móveis.
-5. **Entre empresas:** a central de comando (pergunta e consultoria) já desenhada, para quando houver mais de uma empresa produzindo.
+5. **Entre empresas:** a central de comando (pergunta e consultoria). Exemplo: um projeto novo pede ajuda ao marketing da May.
+   - A especialista entra com o **conhecimento** dela: como fazer, o que costuma funcionar.
+   - O trabalho segue os **padrões do projeto que pediu**: o `CLAUDE.md`, a identidade e as regras dele, nunca os da May.
+   - Na prática, o consultor roda na pasta de quem pediu, com o `CLAUDE.md` dele, e recebe o briefing da especialista como referência. A instrução diz explicitamente: "use os padrões deste projeto; o briefing é só conhecimento técnico, não estilo nem marca."
+   - Só acontece com ordem do dono e plano aprovado.
+
+Todas as 5 fases serão construídas, nessa ordem. Cada uma ganha o seu próprio plano quando a anterior estiver pronta.
 
 Cada fase entrega algo usável sozinho, e a fase 1 já mostra o prédio real.
