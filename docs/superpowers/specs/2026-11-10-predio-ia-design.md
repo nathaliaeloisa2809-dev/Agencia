@@ -68,7 +68,7 @@ predio-ia/
 |---|---|---|
 | **Funcionário** | cada `.claude/agents/<nome>.md` do projeto. A Conteudo May tem 18. | Ver ao vivo, dar tarefa, responder, aprovar, parar |
 | **Funcionário genérico** | projeto sem `.claude/agents`: um "Assistente" | Igual ao funcionário |
-| **Visitante** | sessão que o dono abriu no terminal | Só ver. Para responder, usa o terminal. Quando o terminal fecha, o prédio pode "assumir" a sessão (`--resume`). |
+| **Visitante** | sessão que o dono abriu no terminal | **Não vira boneco** (decisão do dono em 2026-11-10: ocupa espaço). Aparece no título do andar ("2 sessões no terminal, ❗ 1 esperando você") e em 🔎 Em execução. Para responder, usa o terminal. |
 
 - Cada funcionário tem uma mesa fixa, um crachá com o cargo (o `name`) e uma descrição (a `description`).
 - A aparência é sorteada uma vez e fica salva.
@@ -134,6 +134,32 @@ claude -p "<instrução do trabalho>" --output-format stream-json --verbose
 - Todo processo tem um ID de sessão, e o painel "Em execução" mostra todos os ativos.
 - **⏹ Parar** encerra o processo. O trabalho volta para a fila no mesmo ponto em que estava, sem avançar status.
 
+**Confirmado em 2026-11-10 (teste real):**
+- `claude -p "<instrução>" --agent <nome> --output-format stream-json --verbose` roda a sessão já como o funcionário, com as ferramentas da ficha dele.
+- O evento `init` traz `session_id` e `apiKeySource: "none"`, ou seja, usa o login e o plano do dono.
+- O stream traz `rate_limit_event`, usado para a pausa forçada, e `result`, com `is_error`, `num_turns` e o texto final.
+- Os hooks do usuário (por exemplo, o SessionStart do superpowers) também rodam nessas sessões e enchem o contexto. Por isso o executor usa `--setting-sources project`, para carregar só as configurações do projeto (verificar no plano).
+
+### 7.7 Caixas de contexto enxutas
+
+Cada trabalho roda numa **sessão nova**, nunca numa sessão longa que vai acumulando histórico.
+
+- **O que a sessão nova recebe:** só o que o funcionário precisa para aquele passo:
+  - a ficha dele (via `--agent`);
+  - o caminho exato do item (por exemplo, o `peca.md`);
+  - os arquivos da seção `## Lê` da ficha;
+  - a **passagem de bastão** do passo anterior.
+- **Passagem de bastão:**
+  - Na linha de produção, o próprio `peca.md` já é a caixa de contexto: cada estação escreve só na sua seção.
+  - Na fila, o funcionário termina escrevendo `PASSAGEM.md` na pasta da entrega, com o que fez, o que falta e onde estão os arquivos.
+- **Trabalho longo:** quando um trabalho passa de 40 turnos, ou quando o `result` indica que o contexto encheu, o executor encerra a sessão e abre outra. A nova sessão recebe a instrução original mais o `PASSAGEM.md`, e nada do histórico antigo.
+
+### 7.8 Referência do Instagram
+
+- **Sem login**, a página `https://www.instagram.com/oticamay/` só mostra o resumo do perfil (seguidores, número de posts, descrição). O prédio busca esse resumo uma vez por dia e salva em `predio-ia/dados/referencias/instagram-oticamay.md`.
+- **Posts com legenda e foto:** para os agentes verem isso, é preciso uma coleta feita no navegador do dono (Claude in Chrome), salva na pasta de pesquisa do projeto. Essa coleta só acontece com autorização do dono.
+- **Quem recebe o arquivo:** os funcionários que olham conteúdo publicado (`pesquisa-mercado`, `estrategista`, `ideias-criativas`, `analista-resultados`, `otimizacao`, `diretor-criativo`) recebem o caminho dele na instrução.
+
 ### 7.2 Adaptador "linha de produção" (Conteudo May)
 
 O adaptador é escolhido automaticamente quando o projeto tem `sistema/pipeline.js` e o script `status` no `package.json`.
@@ -192,6 +218,8 @@ O adaptador é escolhido automaticamente quando o projeto tem `sistema/pipeline.
 - **Fins de semana:** o padrão é sem expediente. É configurável.
 - **Na pausa e no almoço:** não começa trabalho novo. Quem está no meio de um passo termina e então vai para a copa ou o lounge. Ninguém é interrompido no meio de um arquivo.
 - **Fora do expediente:** nada roda sozinho. O dono ainda pode dar "trabalho na hora", com o aviso "fora do expediente — rodar mesmo assim?".
+- **Ao ligar o computador:** um atalho na pasta Inicializar do Windows abre o prédio. Se estiver dentro do expediente, o turno começa na hora. Esse atalho já foi criado em 2026-11-10.
+- **Abrir as peças do dia:** na Conteudo May, o calendário (`05-Calendario`) já foi aprovado pelo dono no `ciclo-mensal`. Então, no começo do turno, o prédio abre sozinho as peças do calendário de hoje e de amanhã que ainda não existem: chama o `estoque` e depois o `ideias-criativas`, como no passo 1–2 do `ciclo-semanal`. Sem calendário para o período, ele não inventa peças e avisa o dono.
 - **Meta do dia:**
   - Conteudo May: as peças do calendário de hoje chegarem a `aguardando-aprovacao`. Vem da cota que o projeto já tem (5 stories por dia, mais post e reels nos dias marcados).
   - Fila: um número de tarefas por dia, definido pelo dono.
