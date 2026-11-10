@@ -85,9 +85,8 @@ class Boneco {
 function sincronizarBonecos() {
   const desejados = new Map();
   retrato.andares.forEach(a => {
+    // Só agentes designados viram bonecos; sessões do terminal e ajudantes ficam na lista "Em execução".
     a.funcionarios.forEach((f, i) => desejados.set(`f:${a.id}:${f.nome}`, { tipo: 'funcionario', andar: a, dados: f, mesa: i, cor: a.cor }));
-    a.visitantes.forEach(v => desejados.set(`v:${v.id}`, { tipo: 'visitante', andar: a, dados: v, cor: '#9aa3b2' }));
-    a.estagiarios.forEach(e => desejados.set(`e:${e.id}`, { tipo: 'estagiario', andar: a, dados: e, cor: S.shade(a.cor, 0.35) }));
   });
 
   // Vagas ocupadas por quem continua no mesmo tipo de vaga.
@@ -308,6 +307,12 @@ function setView(f, manterCamera = false) {
   if (!manterCamera) { const { w, h } = tamanho(); cam.x = w / 2; cam.y = h / 2; cam.z = zoomAjustado(); }
   renderFloorTitle(); renderBuilding();
 }
+function sessoesTexto(a) {
+  const n = a.visitantes.length;
+  if (!n) return '';
+  const esperando = a.visitantes.filter(v => v.estado === 'esperando' || v.estado === 'precisa').length;
+  return ` · ${n} ${n === 1 ? 'sessão' : 'sessões'} no terminal${esperando ? ` (❗ ${esperando} esperando você)` : ''}`;
+}
 function renderFloorTitle() {
   const p = pisoAtual();
   if (!p) return;
@@ -316,7 +321,7 @@ function renderFloorTitle() {
   $('ftName').textContent = a ? `${a.numero}º ANDAR · ${a.nome.toUpperCase()}` : 'TÉRREO · RECEPÇÃO';
   $('ftSpec').textContent = !a ? 'Entrada do prédio'
     : a.tipo === 'biblioteca' ? `Biblioteca · ${a.skills.length} skills`
-    : `${a.tipo === 'linha-producao' ? 'Linha de produção · ' : ''}${a.funcionarios.length} funcionários${a.pastaExiste ? '' : ' · pasta não encontrada'}`;
+    : `${a.tipo === 'linha-producao' ? 'Linha de produção · ' : ''}${a.funcionarios.length} funcionários${a.pastaExiste ? '' : ' · pasta não encontrada'}${sessoesTexto(a)}`;
   $('fDown').disabled = view === 0; $('fUp').disabled = view === pisos.length - 1;
 }
 $('fUp').onclick = () => { follow = null; setView(Math.min(pisos.length - 1, view + 1)); };
