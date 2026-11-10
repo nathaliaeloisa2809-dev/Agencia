@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prédio IA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="estilo.css">
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="top" class="panel">
+  <h1 class="px" id="nomePredio">PRÉDIO IA</h1>
+  <div id="relogio" class="px"><span id="hora">--:--</span><small>Brasília</small></div>
+</div>
+<div id="floorTitle" class="panel">
+  <button id="fDown" title="Andar de baixo">▼</button>
+  <span class="sw" id="ftSw"></span>
+  <div style="min-width:0;flex:1"><div class="t px" id="ftName"></div><div class="s" id="ftSpec"></div></div>
+  <button id="fUp" title="Andar de cima">▲</button>
+</div>
+<div id="tools" class="panel">
+  <button id="bExec">🔎 Em execução <span class="badge" id="nExec">0</span></button>
+  <button id="bNome">✏️ Nome</button>
+  <button id="bAjustes">⚙️ Ajustes</button>
+</div>
+<div id="building" class="panel">
+  <div class="bh px">PRÉDIO</div>
+  <div id="floorsList"></div>
+  <div class="legend" id="legend"></div>
+</div>
+<div id="agent" class="panel"></div>
+<div id="zoom" class="panel"><button id="zIn">＋</button><button id="zOut">－</button></div>
+<div id="faixa"></div>
+<div id="overlay"><div class="dialog" id="dialog"></div></div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

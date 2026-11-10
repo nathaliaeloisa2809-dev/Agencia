@@ -10,7 +10,7 @@ export function gerarLayout({ funcionarios = 0, tipo = 'fila', skills = 0 } = {}
   const fileiras = terreo || biblioteca ? 0 : Math.max(2, Math.ceil((funcionarios + 2) / 4));
   const numEstantes = biblioteca ? Math.ceil(skills / 4) : 0;
   const linhasEstantes = Math.ceil(numEstantes / 5);
-  const rLounge = biblioteca ? Math.max(17, 5 + 4 * linhasEstantes + 2) : Math.max(17, 6 + 5 * fileiras + 1);
+  const rLounge = biblioteca ? Math.max(17, 5 + 5 * linhasEstantes + 2) : Math.max(17, 6 + 5 * fileiras + 1);
   const altura = terreo ? 26 : Math.max(26, rLounge + 8);
 
   const L = {
@@ -62,7 +62,7 @@ export function gerarLayout({ funcionarios = 0, tipo = 'fila', skills = 0 } = {}
 
   if (biblioteca) {
     for (let i = 0; i < numEstantes; i++) {
-      const c = 3 + 4 * (i % 5), r = 5 + 4 * Math.floor(i / 5);
+      const c = 3 + 4 * (i % 5), r = 5 + 5 * Math.floor(i / 5);
       L.estantes.push({ c, r, skills: [] });
       movel('estanteSkills', c, r, 3, 1, { indice: i });
     }

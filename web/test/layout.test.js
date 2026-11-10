@@ -46,6 +46,13 @@ test('biblioteca com 27 skills tem 7 estantes', () => {
   assert.equal(l.estantes.flatMap(e => e.skills).length, 27);
 });
 
+test('fileiras de estantes não encostam nas etiquetas', () => {
+  const l = gerarLayout({ funcionarios: 0, tipo: 'biblioteca', skills: 24 });
+  const linhas = [...new Set(l.estantes.map(e => e.r))];
+  for (let i = 1; i < linhas.length; i++) assert.ok(linhas[i] - linhas[i - 1] >= 5);
+  for (const e of l.estantes) assert.ok(alcanca(l, (e.c + 1) * T + 8, (e.r + 3) * T + 8));
+});
+
 test('térreo tem entrada alcançável', () => {
   const l = gerarLayout({ tipo: 'terreo' });
   assert.ok(alcanca(l, l.entrada.x, l.entrada.y));
